@@ -11,6 +11,7 @@ import de.ust.skill.common.scala.internal.fieldTypes.StringType
 import java.io.PrintStream
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer
 import de.ust.skill.common.scala.api.FieldType
+import scala.collection.mutable.HashMap
 
 /**
  * state of a garbage collection run
@@ -55,7 +56,7 @@ final object MakeHTML {
     ) out.println(s"""<h3><a name=o$n${id(i)}><a href="#t$n">$n</a>#${id(i)}</a></h3>${
       (for (f ← types(n).allFields)
         yield s"""
-      ${f.t} ${f.name} = ${value(i, f)}"""
+      ${escape(f.t.toString)} ${f.name} = ${value(i, f)}"""
       ).mkString("<p>", "<br>", "<hr>")
     }""")
 
@@ -75,13 +76,18 @@ final object MakeHTML {
     else
       t match {
         case t : SingleBaseTypeContainer[_, _] ⇒
-          v.asInstanceOf[Iterable[_]].map(vToString(_, t.groundType)).mkString(t.toString() + "(", ", ", ")")
+          v.asInstanceOf[Iterable[_]].map(vToString(_, t.groundType)).mkString(escape(t.toString()) + "(", ", ", ")")
 
         case _ ⇒ v match {
           case v : String      ⇒ '"' + v + '"'
           case v : SkillObject ⇒ ref(v, s"${v.getTypeName}#${id(v)}")
-          case _               ⇒ v.toString()
+          case v : HashMap[_, _] ⇒ v.map { case (k, v) ⇒ s"${vToString(k, null)} -> ${vToString(v, null)}" }.mkString(
+            if (null == t) "("
+            else escape(t.toString()) + "(", ", ", ")")
+          case _ ⇒ v.toString()
         }
       }
   }
+
+  private def escape(s : String) : String = s.replace("<", "&lt").replace(">", "&gt")
 }
