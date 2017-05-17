@@ -14,7 +14,7 @@ import de.ust.skill.common.scala.api.FieldType
 import scala.collection.mutable.HashMap
 
 /**
- * state of a garbage collection run
+ * create html representation a file's content 
  *
  * @note type anchors have a prefix t
  * @note object anchors have a prefix o

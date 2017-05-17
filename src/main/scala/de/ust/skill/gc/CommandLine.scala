@@ -14,6 +14,7 @@ final object CommandLine {
   case class GCConfig(
     target : File = null,
     output : File = null,
+    directoryMode : Boolean = false,
     progress : Boolean = false,
     statistics : Boolean = false);
 
@@ -21,6 +22,10 @@ final object CommandLine {
 
     opt[Unit]('p', "progress").unbounded().action((x, c) ⇒
       c.copy(progress = true)).text("print progress while writing output file")
+
+    opt[Unit]('d', "directory").action { (x, c) ⇒
+      c.copy(directoryMode = true)
+    }.text("create a directory instead of a single file. Recommended for files larger than 10 MB.")
 
     opt[File]('o', "output").action { (x, c) ⇒
       c.copy(output = x)
@@ -46,11 +51,23 @@ final object CommandLine {
 
     val begin = System.nanoTime()
 
-    val out =
-      if (null == opts.output) System.out
-      else new PrintStream(opts.output)
+    if (opts.directoryMode) {
+      val base =
+        if (null == opts.output) new File(".")
+        else opts.output
 
-    MakeHTML(sf, opts.output, opts.progress, opts.statistics, out)
+      MakeHTMLDir(sf, base, opts.progress, opts.statistics)
+
+    } else {
+      val out =
+        if (null == opts.output) System.out
+        else new PrintStream(opts.output)
+
+      MakeHTML(sf, opts.output, opts.progress, opts.statistics, out)
+
+      if (null != opts.output)
+        out.close()
+    }
 
     if (opts.statistics) {
       println(s" finished in ${(System.nanoTime() - begin) * 1e-9} sec")
@@ -58,8 +75,6 @@ final object CommandLine {
 
     if (null != opts.output) {
       println("-done-")
-    } else {
-      out.close()
     }
   }
 }
